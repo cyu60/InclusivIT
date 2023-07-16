@@ -1,28 +1,46 @@
-# Create T3 App
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+# InclusivIT
 
-## What's next? How do I make an app with this?
+InclusivIT is a web application designed to ensure that all language used in your content is inclusive and respectful. This is accomplished by using Natural Language Processing (NLP) techniques to scan for potentially offensive or insensitive terms and phrases, check pronoun usage, identify stereotyping, spot exclusive language, and detect microaggressions.
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+InclusivIT provides a real-time analysis of your text, providing suggestions and feedback to promote inclusive language usage.
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Deployed Application
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+You can access the deployed application at [InclusivIT](https://inclusiv-it.vercel.app/).
 
-## Learn More
+## Features
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+- **Pronoun Usage:** Checks if the correct pronouns are being used based on the information provided by the user.
+- **Insensitive Language:** Scans for potentially offensive or insensitive terms and phrases.
+- **Stereotypes:** Checks if the text perpetuates harmful stereotypes.
+- **Exclusive Language:** Identifies binary language that may exclude non-binary or gender non-conforming individuals.
+- **Contextual Appropriateness:** Understands the context in which certain words are used.
+- **Inclusive Phrases:** Checks for the presence of inclusive phrases.
+- **Microaggressions:** Identifies subtle microaggressions.
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+## Usage
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+1. Visit the [deployed site](https://inclusiv-it.vercel.app/).
+2. Enter your text into the text area.
+3. Click on the "Check" button to start the analysis.
+4. The app will then analyze your text and provide you with results and suggestions.
 
-## How do I deploy this?
+## Future Improvements
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+- Allow users to adjust sensitivity of certain categories according to their preferences.
+- Implement a user system where users can save their settings and past analyses.
+
+## Contributions
+
+If you are interested in contributing to the development of InclusivIT, please submit a pull request.
+
+## Contact
+
+If you have any questions or suggestions, feel free to open an issue or reach out to us directly.
+
+Please enjoy using InclusivIT, and we hope it helps you make your language more inclusive!
+
+## License
+
+[MIT License](./LICENSE)
