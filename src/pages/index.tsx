@@ -1,14 +1,18 @@
 import { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
+import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import {
-  ChatCompletionRequestMessage,
-  Configuration,
-  OpenAIApi,
-} from "openai";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+  Dispatch,
+  ReactElement,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { emptyFeedbackData, systemPrompt } from "~/constants/constants";
+import { functions } from "../constants/functions";
 
 if (!process.env.NEXT_PUBLIC_OPEN_AI_API_KEY) {
   throw new Error("Missing API key");
@@ -19,8 +23,38 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
+const dummyMessage =
+  "Hey guys, I've assigned the coding task to John because he's good with these computer things. Girls generally don't enjoy that stuff. I'm sure he'll sort it out quickly. If not, we'll just get someone else to do it, no biggie.";
+
+export type FeedbackMetric = {
+  score: number;
+  feedback: string;
+  
+};
+
+export type FeedbackData = {
+  pronounUsage: FeedbackMetric;
+  insenstiveLanguage: FeedbackMetric;
+  stereotypes: FeedbackMetric;
+  exclusiveLanguage: FeedbackMetric;
+  inclusivePhrases: FeedbackMetric;
+  improvedText: string;
+  [key: string]: FeedbackMetric | string;
+}
+// type FeedbackData = {
+//   "pronounUsage"?: FeedbackMetric;
+//   "insenstiveLanguage"?: FeedbackMetric;
+//   "stereotypes"?: FeedbackMetric;
+//   "exclusiveLanguage"?: FeedbackMetric;
+//   "inclusivePhrases"?: FeedbackMetric;
+//   "improvedText"?: string;
+//   [key: string]: FeedbackMetric | string;
+// };
+
 const Home: NextPage = () => {
-  const [userInput, setUserInput] = useState("");
+  const [userInput, setUserInput] = useState(dummyMessage);
+  const [newResponse, setNewResponse] = useState("");
+  const [feedback, setFeedback] = useState<FeedbackData>(emptyFeedbackData);
   const [summaryReport, setSummaryReport] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,26 +62,37 @@ const Home: NextPage = () => {
     setIsLoading(true);
 
     const assistantResponseObj = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4-0613",
       messages: [
         {
-          role: "user",
-          content: `Generate summary report for my activities: Activity
-        Work - 4 hours
-        Activity
-        Study - 2 hours
-        Activity
-        Exercise - 1 hour
-        Activity
-        Break - 30 minutes`,
+          role: "system",
+          content: systemPrompt,
         },
+        { role: "user", content: userInput },
       ],
+      functions: functions,
+      function_call: { name: "send_feedback" },
     });
 
     const assistantResponse =
       assistantResponseObj?.data?.choices[0]?.message?.content || "";
 
-    setSummaryReport(assistantResponse);
+    // Parse for each content here:
+    // Use the function call capability
+    console.log(assistantResponseObj?.data?.choices[0]?.message?.function_call);
+    const functionResponse =
+      assistantResponseObj?.data?.choices[0]?.message?.function_call;
+    if (functionResponse) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const functionDetails: FeedbackData = JSON.parse(
+        functionResponse.arguments!
+      );
+
+      setSummaryReport(functionDetails.improvedText);
+      setFeedback(functionDetails);
+      console.log(functionDetails);
+    }
+
     setIsLoading(false);
   };
 
@@ -66,35 +111,56 @@ const Home: NextPage = () => {
             <Link href="/">
               <div className="hover:text-green-300">Home</div>
             </Link>
-            <Link href="/about">
+            {/* <Link href="/about">
               <div className="hover:text-green-300">About</div>
             </Link>
             <Link href="/contact">
               <div className="hover:text-green-300">Contact</div>
-            </Link>
+            </Link> */}
           </div>
         </nav>
 
         {/* Main Content */}
         <div className="flex flex-col items-center justify-center gap-12 px-4 py-16">
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-            Welcome to InclusivIT 🤖!
+            Welcome to InclusivIT!
           </h1>
-          <div className="min-h-full w-full max-w-6xl divide-y-4 divide-green-800 rounded-lg bg-white p-6 shadow-lg">
-            <ActivitiesList />
+          <div className="min-h-full w-full max-w-6xl rounded-lg bg-white p-6 shadow-lg">
+            {/* Add input box with button */}
+            <UserInputBox
+              userInput={userInput}
+              setUserInput={setUserInput}
+            ></UserInputBox>
+            <List feedback={feedback} />
             <button
-              className="mt-4 rounded bg-green-500 px-4 py-2 text-white"
+              className={
+                userInput === ""
+                  ? "mt-4 rounded bg-gray-500 px-4 py-2 text-white"
+                  : "mt-4 rounded bg-green-500 px-4 py-2 text-white"
+              }
               onClick={() => void generateSummaryReport()}
-              disabled={isLoading}
+              disabled={isLoading || userInput === ""}
             >
-              {isLoading ? <Spinner /> : "Generate Summary Report"}
+              {isLoading ? <Spinner /> : "Generate Review Report"}
             </button>
             {summaryReport && (
-              <div className="mt-4 rounded bg-gray-100 p-3">
-                <p className="text-lg font-semibold">Summary Report:</p>
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <div className="mt-4 rounded bg-green-100 p-3">
+                <p className="text-lg font-semibold">
+                  Better response based on feedback:
+                </p>
+                <textarea
+                  value={summaryReport}
+                  rows={6}
+                  className="w-full rounded-lg border p-3 shadow-inner focus:outline-none focus:ring-2 focus:ring-gray-300 lg:w-9/12"
+                >
+                  {/* <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {summaryReport}
+                  </ReactMarkdown> */}
+                </textarea>
+                {/* <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {summaryReport}
-                </ReactMarkdown>
+                </ReactMarkdown> */}
+                {/* Add a copy button */}
               </div>
             )}
           </div>
@@ -111,9 +177,97 @@ const Home: NextPage = () => {
   );
 };
 
+const UserInputBox: React.FC<{
+  userInput: string;
+  setUserInput: Dispatch<SetStateAction<string>>;
+  // newResponse: string;
+  // setNewResponse: Dispatch<SetStateAction<string>>;
+  // conversation: ChatCompletionRequestMessage[];
+  // setConversation: Dispatch<SetStateAction<ChatCompletionRequestMessage[]>>;
+}> = ({
+  userInput,
+  setUserInput,
+  // newResponse, setNewResponse
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  // const handleClick = async () => {
+  //   setIsLoading(true);
+  //   const assistantResponseObj = await openai.createChatCompletion({
+  //     model: "gpt-3.5-turbo",
+  //     messages: [],
+  //     // messages: [...conversation, { role: "user", content: userInput }],
+  //   });
+
+  //   const assistantResponse =
+  //     assistantResponseObj?.data?.choices[0]?.message?.content || "";
+  //   console.log(userInput, assistantResponse, [
+  //     // ...conversation,
+  //     { role: "user", content: userInput },
+  //     { role: "assistant", content: assistantResponse },
+  //   ]);
+
+  //   setConversation([
+  //     ...conversation,
+  //     { role: "user", content: userInput },
+  //     { role: "assistant", content: assistantResponse },
+  //   ]);
+  //   setUserInput("");
+  //   setIsLoading(false);
+  // };
+  //   <div className="m-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-500 p-6">
+  //   {isLoading ? (
+  //     <div>
+  //       <Spinner />
+  //     </div>
+  //   ) : (
+  //     <div>
+  //       {/* <div onClick={() => void handleClick()}> */}
+  //       <NextIcon></NextIcon>
+  //     </div>
+  //   )}
+  // </div>
+
+  return (
+    <div className="flex flex-col items-center p-6">
+      {/* Page Title */}
+      <h1 className="mb-4 text-2xl font-semibold">
+        Inclusive Language Checker
+      </h1>
+
+      {/* Subheading */}
+      <p className="mb-4 text-gray-600">
+        Enter your text below to check for inclusive language usage:
+      </p>
+
+      {/* User Input */}
+      <textarea
+        className="w-full rounded-lg border p-3 shadow-inner focus:outline-none focus:ring-2 focus:ring-gray-300 lg:w-9/12"
+        rows={5}
+        onChange={(e) => setUserInput(e.target.value)}
+        value={userInput}
+        disabled={isLoading}
+        placeholder="Type your text here..."
+      ></textarea>
+
+      {/* Loading Indicator */}
+      {isLoading && (
+        <p className="mt-3 text-gray-500">Analyzing your text...</p>
+      )}
+    </div>
+  );
+};
 // Rest of the code remains same
 
-const ActivitiesList: React.FC = () => {
+const List: // React.FC<>
+React.FC<{
+  feedback: FeedbackData; //;
+  // setUserInput: Dispatch<SetStateAction<string>>;
+  // newResponse: string;
+  // setNewResponse: Dispatch<SetStateAction<string>>;
+  // conversation: ChatCompletionRequestMessage[];
+  // setConversation: Dispatch<SetStateAction<ChatCompletionRequestMessage[]>>;
+}> = ({ feedback }) => {
   const colorClasses = {
     yellow: "bg-yellow-500",
     green: "bg-green-500",
@@ -121,68 +275,108 @@ const ActivitiesList: React.FC = () => {
     gray: "bg-gray-500",
   };
 
-  const activities = [
+  interface Metric {
+    name: string;
+    description: string;
+    icon: ReactElement; // Assuming CodeIcon is a React component
+    color: string; // Assuming colorClasses.gray is a string
+  }
+
+  const metrics: Metric[] = [
     {
-      name: "Research",
-      time: "4 hours",
-      icon: <WorkIcon />,
-      color: colorClasses.yellow,
-    },
-    {
-      name: "Reading",
-      time: "2 hours",
-      icon: <StudyIcon />,
-      color: colorClasses.green,
-    },
-    {
-      name: "Coding",
-      time: "1 hour",
+      name: "Pronoun Usage",
+      description:
+        "Checks if the correct pronouns are being used based on the user's information",
       icon: <CodeIcon />,
-      color: colorClasses.blue,
+      color: colorClasses.gray,
     },
     {
-      name: "Break",
-      time: "30 minutes",
-      icon: <BreakIcon />,
+      name: "Insensitive Language",
+      description:
+        "Scans for potentially offensive or insensitive terms and phrases",
+      icon: <CodeIcon />,
+      color: colorClasses.gray,
+    },
+    {
+      name: "Stereotypes",
+      description: "Checks if the text perpetuates harmful stereotypes",
+      icon: <CodeIcon />,
+      color: colorClasses.gray,
+    },
+    {
+      name: "Exclusive Language",
+      description:
+        "Identifies binary language that may exclude non-binary or gender non-conforming individuals",
+      icon: <CodeIcon />,
+      color: colorClasses.gray,
+    },
+    {
+      name: "Inclusive Phrases",
+      description:
+        "Checks for the presence of inclusive phrases and encourages their use",
+      icon: <CodeIcon />,
       color: colorClasses.gray,
     },
   ];
 
   return (
     <div className="rounded-lg bg-white p-6">
-      <div className="flex items-center gap-4">
+      {/* <div className="flex items-center gap-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-500">
           <AssistantIcon />
         </div>
         <div>
           <p className="font-semibold text-indigo-600">Assistant</p>
           <p className="text-gray-700">
-            From ChronoMate, here is a list of your activities and the time
-            spent on each:
+            From ChronoMate, here is a list of your metrics and the time spent
+            on each:
           </p>
         </div>
-      </div>
-
+      </div> */}
       <ul className="mt-4 list-disc pl-6">
-        {activities.map((activity, index) => (
+        {metrics.map((metric, index) => (
           <li
             key={index}
             className="mt-2 flex gap-4 rounded border p-3 transition-shadow hover:shadow-md"
           >
             <div
-              className={`flex h-10 w-10 items-center justify-center rounded-full ${activity.color}`}
+              className={`flex h-10 w-10 items-center justify-center rounded-full ${metric.color}`}
             >
-              {activity.icon}
+              {metric.icon}
             </div>
             <div>
-              <p className="font-semibold text-indigo-600">Activity</p>
-              <p className="text-gray-700">
-                {activity.name} {"\u2022"} {activity.time}
-              </p>
+              <p className="font-semibold text-indigo-600">{metric.name}</p>
+              <p className="text-gray-700">{metric.description}</p>
+              {!!feedback && !!feedback[metric.name] && (
+                <div>
+                  <p>Score: {4}/5</p>
+                  {/* <p>Score: {feedback[metric.name]!.score}/5</p> */}
+                  <p>Feedback: {"test"}</p>
+                  {/* <p>Feedback: {feedback[metric.name]!.feedback}</p> */}
+                </div>
+              )}
             </div>
           </li>
         ))}
       </ul>
+      {/* <ul className="mt-4 list-disc pl-6">
+        {metrics.map((metric, index) => (
+          <li
+            key={index}
+            className="mt-2 flex gap-4 rounded border p-3 transition-shadow hover:shadow-md"
+          >
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-full ${metric.color}`}
+            >
+              {metric.icon}
+            </div>
+            <div>
+              <p className="font-semibold text-indigo-600">{metric.name}</p>
+              <p className="text-gray-700">{metric.description}</p>
+            </div>
+          </li>
+        ))}
+      </ul> */}
     </div>
   );
 };
