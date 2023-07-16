@@ -7,7 +7,7 @@ InclusivIT provides a real-time analysis of your text, providing suggestions and
 
 ## Deployed Application
 
-You can access the deployed application at [InclusivIT](https://inclusiv-it.vercel.app/).
+You can access the deployed application at [InclusivIT](https://inclusiv-it.vercel.app/). Walkthrough: [https://youtu.be/nnExXXXbni0](https://youtu.be/nnExXXXbni0)
 
 ## Features
 
