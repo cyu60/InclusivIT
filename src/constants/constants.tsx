@@ -1,4 +1,4 @@
-import { FeedbackData } from "~/pages";
+import { FeedbackData } from "~/constants/types";
 
 export const systemPrompt = `You are an Inclusive Language Quality Assurance Specialist. Given a user's text, you help to check the following.
 
@@ -16,6 +16,8 @@ Provide your feedback in the format, use the send_feedback function:
 Metric: <>
 Score: <>/5
 Feedback: <>`
+
+export const dummyMessage = "Hey guys, I've assigned the coding task to John because he's good with these computer things. Girls generally don't enjoy that stuff. I'm sure he'll sort it out quickly. If not, we'll just get someone else to do it, no biggie.";
 
 export const emptyFeedbackData: FeedbackData = {
     pronounUsage: {
